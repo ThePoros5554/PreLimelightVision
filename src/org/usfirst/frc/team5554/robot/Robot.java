@@ -32,16 +32,16 @@ import util.DynamicSource;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-public class Robot extends TimedRobot {
-
+public class Robot extends TimedRobot
+{
 	public static OI oi;
 
 	public static MechDriveTrain dt;
 	
-	public Victor rearRightMotor;
-	public Victor frontRightMotor;
-	public Victor rearLeftMotor;
-	public Victor frontLeftMotor;
+	private Victor rearRightMotor;
+	private Victor frontRightMotor;
+	private Victor rearLeftMotor;
+	private Victor frontLeftMotor;
 	
 	public static SmartJoystick joy;
 	
@@ -58,28 +58,22 @@ public class Robot extends TimedRobot {
 	 * used for any initialization code.
 	 */
 	@Override
-	public void robotInit() {
-		
+	public void robotInit()
+	{		
 		frontRightMotor = new Victor(RobotMap.FRONT_RIGHT_MOTOR_PORT);
 		rearRightMotor = new Victor(RobotMap.REAR_RIGHT_MOTOR_PORT);
 		frontLeftMotor = new Victor(RobotMap.FRONT_LEFT_MOTOR_PORT);
 		rearLeftMotor = new Victor(RobotMap.REAR_LEFT_MOTOR_PORT);
 		
-		//feederAxis = new MechSys(RobotMap.FEEDER_AXIS_PORT);
-		
-		joy = new SmartJoystick(0);
-
+		joy = new SmartJoystick(RobotMap.DRIVER_JOYSTICK_PORT);
 		
 		dt = new MechDriveTrain(frontLeftMotor, rearLeftMotor, frontRightMotor, rearRightMotor);
 		dt.SetIsRanged(true);
 		dt.setDefaultCommand(new DriveMechanum(dt, joy));
 		
-		s = new DynamicSource(0.0);
-		t = new DynamicSource(0.0);
-		
-	    SmartDashboard.putNumber(RobotMap.MIN_HEIGHT_KEY, 0);
+	    SmartDashboard.putNumber(RobotMap.MIN_HEIGHT_KEY, 10);
 	    SmartDashboard.putNumber(RobotMap.MAX_HEIGHT_KEY, 200);
-	    SmartDashboard.putNumber(RobotMap.MIN_WIDTH_KEY, 0);
+	    SmartDashboard.putNumber(RobotMap.MIN_WIDTH_KEY, 10);
 	    SmartDashboard.putNumber(RobotMap.MAX_WIDTH_KEY, 200);
 	    SmartDashboard.putNumber(RobotMap.MIN_R_KEY, 20);
 	    SmartDashboard.putNumber(RobotMap.MIN_G_KEY, 90);
@@ -88,15 +82,17 @@ public class Robot extends TimedRobot {
 	    SmartDashboard.putNumber(RobotMap.MAX_G_KEY, 180);
 	    SmartDashboard.putNumber(RobotMap.MAX_B_KEY, 255);
 		
+		s = new DynamicSource(0);
+		t = new DynamicSource(0);
+		
 		thread = new CameraThread(s, t);
 		thread.setDaemon(true);
 		thread.start();
 		
-		speed = new PIDProcessor(0.0001, 0, 0, s, true);
-		turn = new PIDProcessor(0.004, 0, 0, t, true);
+		speed = new PIDProcessor(RobotMap.ALIGN_SPEED_P, RobotMap.ALIGN_SPEED_I, RobotMap.ALIGN_SPEED_D, s, true);
+		turn = new PIDProcessor(RobotMap.ALIGN_TURN_P, RobotMap.ALIGN_TURN_I, RobotMap.ALIGN_TURN_D, t, true);
 		
-		
-		align = new PIDMechDrive(dt, MechDrivingDirection.Forward, speed, 6000, null, 0, turn, 0);
+		align = new PIDMechDrive(dt, MechDrivingDirection.Forward, speed, RobotMap.AREA_SETPOINT, null, 0, turn, RobotMap.OFFSET_SETPOINT);
 		
 		oi = new OI();
 	}
@@ -107,25 +103,19 @@ public class Robot extends TimedRobot {
 	 * the robot is disabled.
 	 */
 	@Override
-	public void disabledInit() {
+	public void disabledInit()
+	{
 		align.cancel();
 	}
 
 	@Override
-	public void disabledPeriodic() {
+	public void disabledPeriodic()
+	{
 		Scheduler.getInstance().run();
 	}
 
 	/**
-	 * This autonomous (along with the chooser code above) shows how to select
-	 * between different autonomous modes using the dashboard. The sendable
-	 * chooser code works with the Java SmartDashboard. If you prefer the
-	 * LabVIEW Dashboard, remove all of the chooser code and uncomment the
-	 * getString code to get the auto name from the text box below the Gyro
-	 *
-	 * <p>You can add additional auto modes by adding additional commands to the
-	 * chooser code above (like the commented example) or additional comparisons
-	 * to the switch structure below with additional strings & commands.
+	 * This function is called once when the robot enters into Autonomous mode.
 	 */
 	@Override
 	public void autonomousInit()
@@ -142,14 +132,16 @@ public class Robot extends TimedRobot {
 	}
 
 	@Override
-	public void teleopInit() {
+	public void teleopInit()
+	{
 	}
 
 	/**
 	 * This function is called periodically during operator control.
 	 */
 	@Override
-	public void teleopPeriodic() {
+	public void teleopPeriodic()
+	{
 		Scheduler.getInstance().run();
 	}
 
@@ -157,6 +149,7 @@ public class Robot extends TimedRobot {
 	 * This function is called periodically during test mode.
 	 */
 	@Override
-	public void testPeriodic() {
+	public void testPeriodic()
+	{
 	}
 }

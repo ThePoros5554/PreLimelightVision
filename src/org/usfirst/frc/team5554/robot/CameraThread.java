@@ -18,11 +18,8 @@ import org.opencv.imgproc.Imgproc;
 
 public class CameraThread extends Thread
 {		
-    public List<Target> targets = new ArrayList<>();
     public DynamicSource speed;
     public DynamicSource turn;
-    private int size = 0;
-    private double offset = 0;
 
 	public CameraThread(DynamicSource speed, DynamicSource turn)
 	{
@@ -34,8 +31,8 @@ public class CameraThread extends Thread
 	public void run()
 	{		
 		/*** Setup ***/
-		CameraHandler cameras = new CameraHandler(1, RobotMap.CAMERA_RES_HEIGHT, RobotMap.CAMERA_RES_WIDTH);
-        VideoBox screen = new VideoBox("Live Feed" , RobotMap.CAMERA_RES_HEIGHT , RobotMap.CAMERA_RES_WIDTH);
+		CameraHandler cameras = new CameraHandler(1, RobotMap.CAMERA_RES_WIDTH, RobotMap.CAMERA_RES_HEIGHT);
+        VideoBox screen = new VideoBox("Live Feed" , RobotMap.CAMERA_RES_WIDTH, RobotMap.CAMERA_RES_HEIGHT);
         List<MatOfPoint> contours = new ArrayList<>();
 		
 		cameras.SetStreamer(0);
@@ -43,13 +40,20 @@ public class CameraThread extends Thread
 		/*** Body ***/
 		while (!Thread.interrupted()) 
 		{	
+            int size = 0;
+            double offset = 0;
+			
             Stream stream = cameras.GetStream();
             Mat frame;
-            Scalar minThresholdBound = new Scalar((int)SmartDashboard.getNumber(RobotMap.MIN_R_KEY, 0), (int)SmartDashboard.getNumber(RobotMap.MIN_G_KEY, 0),
-                (int)SmartDashboard.getNumber(RobotMap.MIN_B_KEY, 0));
-            Scalar maxThresholdBound = new Scalar((int)SmartDashboard.getNumber(RobotMap.MAX_R_KEY, 255), (int)SmartDashboard.getNumber(RobotMap.MAX_G_KEY, 255),
-                (int)SmartDashboard.getNumber(RobotMap.MAX_B_KEY, 255));
-            targets.clear();
+            
+            Scalar minThresholdBound = new Scalar(
+	            	(int)SmartDashboard.getNumber(RobotMap.MIN_R_KEY, 0),
+	            	(int)SmartDashboard.getNumber(RobotMap.MIN_G_KEY, 0),
+	                (int)SmartDashboard.getNumber(RobotMap.MIN_B_KEY, 0));
+            Scalar maxThresholdBound = new Scalar(
+	        		(int)SmartDashboard.getNumber(RobotMap.MAX_R_KEY, 255),
+	        		(int)SmartDashboard.getNumber(RobotMap.MAX_G_KEY, 255),
+	                (int)SmartDashboard.getNumber(RobotMap.MAX_B_KEY, 255));
             
             if (stream.GetReport() == 0) 
             {
@@ -71,31 +75,26 @@ public class CameraThread extends Thread
                 {
                     Target t = new Target(contour);
 
-                    if (VisionHelper.IsTargetInSize(t, SmartDashboard.getNumber(RobotMap.MIN_HEIGHT_KEY, 0), SmartDashboard.getNumber(RobotMap.MAX_HEIGHT_KEY, 1000),
-                    SmartDashboard.getNumber(RobotMap.MIN_WIDTH_KEY, 0), SmartDashboard.getNumber(RobotMap.MAX_WIDTH_KEY, 1000)))
+                    if (VisionHelper.IsTargetInSize(t,
+                		SmartDashboard.getNumber(RobotMap.MIN_HEIGHT_KEY, 0),
+                		SmartDashboard.getNumber(RobotMap.MAX_HEIGHT_KEY, 1000),
+                		SmartDashboard.getNumber(RobotMap.MIN_WIDTH_KEY, 0),
+                		SmartDashboard.getNumber(RobotMap.MAX_WIDTH_KEY, 1000)))
                     {
-                        targets.add(t);
-                        
+                		if (t.GetSize() > size )
+                		{
+                			size = t.GetSize();
+                			offset = t.GetOffsetX(RobotMap.CAMERA_RES_WIDTH);
+                		}
                     }
                 }
 
-            	size = 0;
-            	offset = 0;
-            	for (Target t : targets)
-            	{
-            		if ( t.GetWidth() * t.GetHeight() > size )
-            		{
-            			size =  t.GetWidth() * t.GetHeight();
-            			offset = t.GetCenter().x - (RobotMap.CAMERA_RES_WIDTH / 2 - 0.5);
-            		}
-                }
-            	
-
-        		System.out.println(size);
-        		System.out.println(offset);
+        		System.out.println("Size: " + size);
+        		System.out.println("Offset: " + offset);
             	speed.SetValue(size);
             	turn.SetValue(offset);
-                screen.stream(frame);
+                
+            	screen.stream(frame);
             }
 		}
 	}

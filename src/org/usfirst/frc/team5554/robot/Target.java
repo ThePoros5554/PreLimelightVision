@@ -11,7 +11,7 @@ public class Target
 	private int width;
 	private int height;
 	
-    public Target(Point center, int height, int width)
+    public Target(Point center, int height, int width) // for general targets (ex. LimeLight vision targets)
 	{
         this.width = width;
         this.height = height;
@@ -19,7 +19,7 @@ public class Target
         centerPoint = center;
 	}
         
-    public Target(double center_x, double center_y, int height, int width)
+    public Target(double center_x, double center_y, int height, int width) // for general targets (ex. LimeLight vision targets)
 	{
         this.width = width;
         this.height = height;
@@ -27,9 +27,9 @@ public class Target
         centerPoint = new Point(center_x, center_y);
 	}
         
-	public Target(MatOfPoint target)
+	public Target(MatOfPoint points) // for OpenCV vision targets
 	{
-        Rect br = Imgproc.boundingRect(target);
+        Rect br = Imgproc.boundingRect(points);
 
         this.width = br.width;
         this.height = br.height;
@@ -48,24 +48,44 @@ public class Target
         this.centerPoint = center;
 	}
 	
-	public void SetSize(int w, int h) // set the width and height of the target
+	public void SetWidth(int width) // set the width of the target
 	{
-        this.width = w;
-        this.height = h;
+        this.width = width;
 	}
-    
-    public double GetAngle(double fovAngle, int pixelNum) // calculates the angle between the target and the camera (+ right, - left)
-    {
-        double center = pixelNum / 2 - 0.5;
-        double focal_length = (0.5 * pixelNum) / Math.tan(fovAngle / 2.0);
-        double angle = Math.toDegrees(Math.atan((this.centerPoint.x - center) / focal_length));
-        
-        return angle;
-    }
+	
+	public void SetHeight(int height) // set the height of the target
+	{
+        this.height = height;
+	}
 	
     public Point GetCenter()
     {
         return this.centerPoint;
+    }
+    
+    public int GetWidth()
+    {
+        return this.width;
+    }
+    
+    public int GetHeight()
+    {
+        return this.height;
+    }
+    
+    public double GetOffsetX(int image_pixel_width)
+    {
+        return this.centerPoint.x - (image_pixel_width / 2 - 0.5); // calculates x offset from center (+ right - left)
+    }
+    
+    public double GetOffsetY(int image_pixel_height)
+    {
+        return -(this.centerPoint.y - (image_pixel_height / 2 - 0.5)); // calculates y offset from center (+ up - down)
+    }
+    
+    public int GetSize()
+    {
+    	return this.height * this.width;
     }
 
     public Point GetUpperLeft()
@@ -86,15 +106,5 @@ public class Target
     public Point GetBottomRight()
     {
         return new Point(this.centerPoint.x + (this.width / 2.0), this.centerPoint.y + (this.height / 2.0));
-    }
-    
-    public int GetWidth()
-    {
-        return this.width;
-    }
-    
-    public int GetHeight()
-    {
-        return this.height;
     }
 }
